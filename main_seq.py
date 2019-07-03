@@ -91,13 +91,11 @@ def main():
                 original_graph.add_adj(v1=int(values[0]), v2=int(values[1]), weight=np.random.rand())
         
     prev_list = []
-
-    # PyPy
-    with pymp.Parallel(5) as p:
-        start = time()
-        for i in p.range(0, int(n)):
-            prev_list.append(dijsktra(original_graph, i))
-        end = time()
+    
+    start = time()
+    for i in range(0, int(n)):
+        prev_list.append(dijsktra(original_graph, i))
+    end = time()
 
     graph_list = []
 
@@ -142,7 +140,7 @@ def main():
     #     gr.add_edges_from(edges)
     #     nx.draw(gr, node_size=500)
     #     plt.show()
-    print("Tempo de execução paralelo: %f" % (end - start))
+    print("Tempo de execução sequencial: %f" % (end - start))
 
 if __name__ == "__main__":
     main()
