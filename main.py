@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
+from mpi4py import MPI
 import pymp
 
 def dijsktra(graph, initial):
@@ -92,56 +93,55 @@ def main():
         
     prev_list = []
 
-    # PyPy
-    with pymp.Parallel(5) as p:
-        start = time()
+    start = time()
+    with pymp.Parallel(8) as p:
         for i in p.range(0, int(n)):
             prev_list.append(dijsktra(original_graph, i))
-        end = time()
 
-    graph_list = []
+        graph_list = []
 
-    # Cria os subgrafos gerados
-    for subgraph in prev_list:
-        graph = Graph(int(n))
+        # Cria os subgrafos gerados
+        for subgraph in p.iterate(prev_list):
+            graph = Graph(int(n))
 
-        for i, j in enumerate(subgraph):
-            if j != None: graph.add_adj(v1=i, v2=j)
-        graph_list.append(graph)
+            for i, j in enumerate(subgraph):
+                if j != None: graph.add_adj(v1=i, v2=j)
+            graph_list.append(graph)
 
-    tsp = None
+        tsp = None
     
-    # Acha o grafo com grau maximo 2 e testa se existe uma aresta que conecta dos vertices
-    # de grau impar
-    for i, graph in enumerate(graph_list):
-        if max_weight(graph) == 2:
-            nodes = []
+        # Acha o grafo com grau maximo 2 e testa se existe uma aresta que conecta dos vertices
+        # de grau impar
+        for graph in graph_list:
+            # p.print(graph)
+            if max_weight(graph) == 2:
+                nodes = []
 
-            for i in range(0, graph.number_of_nodes):
-                if vertex_degree(i, graph) == 1:
-                    nodes.append(i)
-            
-            if len(nodes) == 2:
-                v1, v2 = nodes
+                for i in range(0, graph.number_of_nodes):
+                    if vertex_degree(i, graph) == 1:
+                        nodes.append(i)
+                
+                if len(nodes) == 2:
+                    v1, v2 = nodes
 
-                if original_graph.adj_matrix[v1][v2] != 0:
-                    graph.adj_matrix[v1][v2] = 1
-                    tsp = graph
-                    break
-                elif original_graph.adj_matrix[v2][v1] != 0:
-                    graph.adj_matrix[v2][v1] = 1
-                    tsp = graph
-                    break
-    
-    # Draw the result graph on the screen
-    # if tsp != None:
-    #     rows, cols = np.where(np.matrix(tsp.adj_matrix) == 1)
-    #     edges = zip(rows.tolist(), cols.tolist())
+                    if original_graph.adj_matrix[v1][v2] != 0:
+                        graph.adj_matrix[v1][v2] = 1
+                        tsp = graph
+                        break
+                    elif original_graph.adj_matrix[v2][v1] != 0:
+                        graph.adj_matrix[v2][v1] = 1
+                        tsp = graph
+                        break
+    end = time()
+        # Draw the result graph on the screen
+        # if tsp != None:
+        #     rows, cols = np.where(np.matrix(tsp.adj_matrix) == 1)
+        #     edges = zip(rows.tolist(), cols.tolist())
 
-    #     gr = nx.Graph()
-    #     gr.add_edges_from(edges)
-    #     nx.draw(gr, node_size=500)
-    #     plt.show()
+        #     gr = nx.Graph()
+        #     gr.add_edges_from(edges)
+        #     nx.draw(gr, node_size=500)
+        #     plt.show()
     print("Tempo de execução paralelo: %f" % (end - start))
 
 if __name__ == "__main__":
