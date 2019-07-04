@@ -53,10 +53,12 @@ def get_neighbors(graph, vertex):
 # retorna o grau do vertice vertex
 def vertex_degree(vertex, graph):
     degree = 0
-    degree += (len(graph.adj_matrix[vertex]) - graph.adj_matrix[vertex].count(0))
 
-    for i in range(0, graph.number_of_nodes):
-        if graph.adj_matrix[i][vertex] != 0: degree += 1
+    degree = (len(graph.adj_matrix[vertex]) - graph.adj_matrix[vertex].count(0))
+    #print(len(graph.adj_matrix[vertex]), graph.adj_matrix[vertex].count(0), degree)
+
+    # for i in range(0, graph.number_of_nodes):
+    #     if graph.adj_matrix[i][vertex] != 0: degree += 1
         
     return degree
 
@@ -140,7 +142,9 @@ def main():
         graph = Graph(original_graph.number_of_nodes)
 
         for i, j in enumerate(subgraph):
-            if j != None: graph.add_adj(v1=i, v2=j)
+            if j != None: 
+                graph.add_adj(v1=i, v2=j, weight = int(original_graph.adj_matrix[i][j]))
+                graph.add_adj(v1=j, v2=i, weight = int(original_graph.adj_matrix[i][j]))
         graph_list.append(graph)
 
     #tsp guarda uma solução para o caixeiro viajante
@@ -161,10 +165,10 @@ def main():
                 v1, v2 = nodes
 
                 if original_graph.adj_matrix[v1][v2] != 0:
-                    graph.adj_matrix[v1][v2] = 1
+                    graph.adj_matrix[v1][v2] = int(original_graph.adj_matrix[v1][v2])
                     tsp.append(graph)
                 elif original_graph.adj_matrix[v2][v1] != 0:
-                    graph.adj_matrix[v2][v1] = 1
+                    graph.adj_matrix[v2][v1] = int(original_graph.adj_matrix[v1][v2])
                     tsp.append(graph)
     #encontrar o tsp de menor custo
     tspSolucao = None
@@ -188,7 +192,7 @@ def main():
     
     if tspSolucao != None:
         print("plotando")
-        rows, cols = np.where(np.matrix(tspSolucao.adj_matrix) == 1)
+        rows, cols = np.where(np.matrix(tspSolucao.adj_matrix) != 0)
         edges = zip(rows.tolist(), cols.tolist())
 
         gr = nx.Graph()
