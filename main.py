@@ -3,7 +3,6 @@ from time import time
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-
 from mpi4py import MPI
 import pymp
 import sys
@@ -62,103 +61,118 @@ def vertex_degree(vertex, graph):
 
 # PyPy
 def max_weight(graph):
-    comm = MPI.COMM_SELF.Spawn(sys.executable, args=['cpi.py'], maxprocs=5)
-    
-    size = comm.Get_size()
-    rank = comm.Get_rank()
-
-    intervalo = graph.number_of_nodes / size
-
-    subtotal = 0
-
+    max_degree = []
     for i in range(0, graph.number_of_nodes):
-        vertex_degree = vertex_degree(i, graph)
-        if subtotal < vertex_degree:
-            subtotal = vertex_degree
-
-    # comm.Reduce(None, [PI, MPI.DOUBLE],
-    #             op=MPI.SUM, root=MPI.ROOT)
-    # print(PI)
-
-    comm.Disconnect()
+        max_degree.append(vertex_degree(i, graph))
     return max(max_degree)
     
 
 
 def main():
-    file_name = "web-polblogs.mtx"
+    comm = MPI.COMM_WORLD
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+    if(rank == 0):
+        file_name = "web-polblogs.mtx"
 
-    original_graph = None
+        original_graph = None
 
-    with open(file_name, 'r') as data:
-        data.readline()
+        with open(file_name, 'r') as data:
+            data.readline()
 
-        (n, n, e) = data.readline().split(' ')
-        original_graph = Graph(int(n))
+            (n, n, e) = data.readline().split(' ')
+            original_graph = Graph(int(n))
+            
+            lines = data.readlines()
+
+            # MPI para scatter
+            for line in lines:
+                values = line.replace('\n', '').split(' ')
+                if len(values) == 3:
+                    original_graph.add_adj(v1=int(values[0]), v2=int(values[1]), weight=int(values[2]))
+                else:
+                    original_graph.add_adj(v1=int(values[0]), v2=int(values[1]), weight=np.random.rand())
+            
         
-        lines = data.readlines()
 
-        # MPI para scatter
-        for line in lines:
-            values = line.replace('\n', '').split(' ')
-
-            if len(values) == 3:
-                original_graph.add_adj(v1=int(values[0]), v2=int(values[1]), weight=int(values[2]))
-            else:
-                original_graph.add_adj(v1=int(values[0]), v2=int(values[1]), weight=np.random.rand())
-        
-    prev_list = []
-
+    else:
+        original_graph = None
     start = time()
-    with pymp.Parallel(8) as p:
-        for i in p.range(0, int(n)):
+    #enviar o grafo para os processos
+    original_graph = comm.bcast(original_graph, root=0)
+    #calculo o tamanho do intervalo
+    intervalo_v = int(original_graph.number_of_nodes/size)
+    prev_list = []
+    #paraleliza dijkstra 
+    if(rank < (size-1)):
+        for i in range(rank*intervalo_v, (rank+1)*intervalo_v):
+            print(i)
+            prev_list.append(dijsktra(original_graph, i))
+    if(rank == size-1):
+        resto = original_graph.number_of_nodes - size * intervalo_v
+        for i in range(rank*intervalo_v+1, (rank+1)*intervalo_v+resto):
             prev_list.append(dijsktra(original_graph, i))
 
-        graph_list = []
-
-        # Cria os subgrafos gerados
-        for subgraph in p.iterate(prev_list):
-            graph = Graph(int(n))
-
-            for i, j in enumerate(subgraph):
-                if j != None: graph.add_adj(v1=i, v2=j)
-            graph_list.append(graph)
-
-        tsp = None
+    #criar um intervalo para cada rank percorrer (intervalo = n/size)
+    #receber a prev_list
+    #acessar a lista prev_list e gerar subgrafos nesse intervalo
+    #cada intervalo pode ter seus subgrafos
+    #pode retornar isto para o rank 0 e no rank 0 realizar o loop que acha o subgrafo solução
+    graph_list = []
     
-        # Acha o grafo com grau maximo 2 e testa se existe uma aresta que conecta dos vertices
-        # de grau impar
-        for graph in graph_list:
-            # p.print(graph)
-            if max_weight(graph) == 2:
-                nodes = []
+    # Cria os subgrafos gerados
+    for prev in prev_list:
+        subgraph = prev
+        graph = Graph(original_graph.number_of_nodes)
 
-                for i in range(0, graph.number_of_nodes):
-                    if vertex_degree(i, graph) == 1:
-                        nodes.append(i)
-                
-                if len(nodes) == 2:
-                    v1, v2 = nodes
+        for i, j in enumerate(subgraph):
+            if j != None: graph.add_adj(v1=i, v2=j)
+        graph_list.append(graph)
 
-                    if original_graph.adj_matrix[v1][v2] != 0:
-                        graph.adj_matrix[v1][v2] = 1
-                        tsp = graph
-                        break
-                    elif original_graph.adj_matrix[v2][v1] != 0:
-                        graph.adj_matrix[v2][v1] = 1
-                        tsp = graph
-                        break
+    #reduzir de alguma forma, para que talvez tenha uma lista de tsps
+    tsp = None
+
+    # Acha o grafo com grau maximo 2 e testa se existe uma aresta que conecta dos vertices
+    # de grau impar
+    for graph in graph_list:
+        # p.print(graph)
+        if max_weight(graph) == 2:
+            nodes = []
+
+            for i in range(0, graph.number_of_nodes):
+                if vertex_degree(i, graph) == 1:
+                    nodes.append(i)
+            
+            if len(nodes) == 2:
+                v1, v2 = nodes
+
+                if original_graph.adj_matrix[v1][v2] != 0:
+                    graph.adj_matrix[v1][v2] = 1
+                    tsp = graph
+                    print("achou")
+                    break
+                elif original_graph.adj_matrix[v2][v1] != 0:
+                    graph.adj_matrix[v2][v1] = 1
+                    tsp = graph
+                    print("achou")
+                    break
+
     end = time()
-        # Draw the result graph on the screen
-        # if tsp != None:
-        #     rows, cols = np.where(np.matrix(tsp.adj_matrix) == 1)
-        #     edges = zip(rows.tolist(), cols.tolist())
+    #Draw the result graph on the screen
+    print(tsp)
+    if tsp != None:
+        print("plotar")
+        rows, cols = np.where(np.matrix(tsp.adj_matrix) == 1)
+        edges = zip(rows.tolist(), cols.tolist())
 
-        #     gr = nx.Graph()
-        #     gr.add_edges_from(edges)
-        #     nx.draw(gr, node_size=500)
-        #     plt.show()
-    print("Tempo de execução paralelo: %f" % (end - start))
+        gr = nx.Graph()
+        gr.add_edges_from(edges)
+        nx.draw(gr, node_size=500)
+        plt.show()
+
+    if (rank == 0):
+        print("acabou")
+        print("Tempo de execução paralelo: ", (end - start))
 
 if __name__ == "__main__":
     main()
