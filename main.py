@@ -6,6 +6,7 @@ import numpy as np
 
 from mpi4py import MPI
 import pymp
+import sys
 
 def dijsktra(graph, initial):
     dist = []
@@ -61,12 +62,27 @@ def vertex_degree(vertex, graph):
 
 # PyPy
 def max_weight(graph):
-    max_degree = []
+    comm = MPI.COMM_SELF.Spawn(sys.executable, args=['cpi.py'], maxprocs=5)
+    
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+
+    intervalo = graph.number_of_nodes / size
+
+    subtotal = 0
 
     for i in range(0, graph.number_of_nodes):
-        max_degree.append(vertex_degree(i, graph))
+        vertex_degree = vertex_degree(i, graph)
+        if subtotal < vertex_degree:
+            subtotal = vertex_degree
 
+    # comm.Reduce(None, [PI, MPI.DOUBLE],
+    #             op=MPI.SUM, root=MPI.ROOT)
+    # print(PI)
+
+    comm.Disconnect()
     return max(max_degree)
+    
 
 
 def main():
