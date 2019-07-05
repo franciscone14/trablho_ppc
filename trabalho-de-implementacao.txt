@@ -1,0 +1,19 @@
+Trabalho de Implementação
+Existem vários algoritmos que já foram implementados em paralelo e podem ser aplicados a vários problemas do mundo real. Neste trabalho em grupo, deverá ser definido um problema real e um algoritmo conhecido que poderá ser utilizado para resolver o problema.
+
+Por exemplo, há vários problemas do mundo real que se encaixam no problema clássico em Computação do caixeiro viajante (em empresas de transporte, por exemplo). Existem vários algoritmos para resolver o caixeiro viajante sequenciais e paralelos.
+
+Para realizar o trabalho, o grupo deverá seguir as seguintes etapas:
+
+Etapa 1- Descrever no relatório o problema do mundo real que estará sendo resolvido
+
+Estapa 2- Escolher  no item "Escolha de algoritmo" um dos algoritmos abaixo (cada grupo deverá implementar um algoritmo diferente)
+
+Etapa 3- Realizar a implementação do algoritmo  utilizando MPI e OpenMP (se possível). São apresentados alguns artigos com esses algoritmos paralelizados para servir de exemplo. A solução apresentada pelo grupo não precisa ser exatamente a mesma apresentada no artigo. Poderá ser uma variação do algoritmo proposto. As alterações no algoritmo deverão ser reportadas no relatório.
+
+Etapa 4 - Executar o programa paralelo para  bases de dados pequenas e grandes disponíveis na web para analisar o desempenho da paralelização.
+
+Etapa 5-  Elaboração do relatório: definição do problema, definição do algoritmo a ser paralelizado, decisões de projeto tomadas pelo grupo, descrição do programa paralelo, resultados obtidos (Speedup para 1, 2, 4, ... processos, eficiência, fração sequencial definida experimentalmente (métrica de Karp-Falt), tempo gasto em troca de mensagens ou outras sincronizações do OpenMP) e análise dos resultados com discussão sobre o desempenho alcançado, observando-se o hardware, a paralelização, tamanho da entrada, overhead paralelo, entre outros fatores. Inserir também o link para o código no GitHub (o código deverá estar  bem documentado).
+
+Para cada número de processos o programa deverá ser executado 10 vezes  e calculada  a média do tempo de execução antes  de gerar o speedup  e a eficiência. Traçar um gráfico  de speedup.
+

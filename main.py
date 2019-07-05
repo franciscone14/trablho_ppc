@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from mpi4py import MPI
-import pymp
-import sys
 
 #funcao dijkstra - encontra a arvore de caminho minimo entre todos os vértices a partir de um vertice inicial
 def dijsktra(graph, initial):
@@ -194,8 +192,9 @@ def main():
         print("plotando")
         rows, cols = np.where(np.matrix(tspSolucao.adj_matrix) != 0)
         edges = zip(rows.tolist(), cols.tolist())
+        print(edges)
 
-        gr = nx.Graph()
+        gr = nx.DiGraph()
         gr.add_edges_from(edges)
         nx.draw(gr, node_size=300, with_labels=True, font_weight='bold')
         plt.show()
