@@ -7,10 +7,10 @@ Este repositório contêm a solução para o trabalho da disciplina de GCC-177.
 - Igor Carvalho: https://github.com/igorecarvalho
 - Victor Hugo Landin: https://github.com/vhal9
 
-##O Trabalho 
-- O problema esta descrito no arquivo trabalho-de-implementacao.txt.
-- Arquivo main.py realiza o estudados dos dados.
-- Arquivo Relatório_Trabalho_PPC.pdf contém o relatório de desenvolvimento do trabalho.
+## O Trabalho 
+- O problema esta descrito no arquivo ```trabalho-de-implementacao.txt```.
+- Arquivo ```main.py``` realiza o estudados dos dados.
+- Arquivo ```Relatório_Trabalho_PPC.pdf``` contém o relatório de desenvolvimento do trabalho.
 
 # Para executar:
 - ```git clone https://github.com/franciscone14/trablho_ppc.git```
